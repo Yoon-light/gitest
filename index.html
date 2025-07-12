@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>36가지 탄생별자리 운세</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-blue-900 min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-md mx-auto">
+        <div class="card rounded-2xl p-8 shadow-2xl text-white">
+            <h1 class="text-3xl font-bold text-center mb-2 text-yellow-300">36가지 탄생별자리</h1>
+            <p class="text-center text-gray-300 mb-6">당신의 진짜 별자리를 찾아보세요.</p>
+
+            <div class="flex items-center space-x-4 mb-6">
+                <input type="number" id="month" placeholder="태어난 월 (예: 3)" class="w-1/2 bg-gray-700 text-white placeholder-gray-400 border border-gray-600 rounded-lg p-3 text-center focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                <input type="number" id="day" placeholder="태어난 일 (예: 21)" class="w-1/2 bg-gray-700 text-white placeholder-gray-400 border border-gray-600 rounded-lg p-3 text-center focus:outline-none focus:ring-2 focus:ring-yellow-400">
+            </div>
+
+            <button id="findZodiac" class="w-full bg-yellow-400 text-gray-900 font-bold py-3 rounded-lg hover:bg-yellow-300 transition-colors duration-300 shadow-lg">
+                내 별자리 찾기
+            </button>
+        </div>
+
+        <div id="result" class="mt-6 card rounded-2xl p-8 shadow-2xl text-white hidden">
+            <h2 id="zodiacName" class="text-2xl font-bold text-yellow-300 text-center"></h2>
+            <p id="zodiacDate" class="text-sm text-gray-400 text-center mb-4"></p>
+            <p id="zodiacDescription" class="text-gray-200 leading-relaxed"></p>
+        </div>
+        
+        <div id="error" class="mt-6 bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg relative hidden" role="alert">
+            <strong class="font-bold">오류:</strong>
+            <span class="block sm:inline" id="errorMessage"></span>
+        </div>
+    </div>
+
+    <script>
+        // 별자리 데이터 (36가지)
+        const zodiacs = [
+            { name: '양자리 I (개척자)', startMonth: 3, startDay: 21, endMonth: 3, endDay: 30, description: '새로운 시작을 두려워하지 않는 용감한 개척자입니다. 타고난 리더십과 열정으로 주변 사람들을 이끌지만, 때로는 성급한 결정으로 후회하기도 합니다.' },
+            { name: '양자리 II (지도자)', startMonth: 3, startDay: 31, endMonth: 4, endDay: 9, description: '강력한 카리스마와 자신감으로 무장한 지도자 타입입니다. 목표를 향해 직선적으로 나아가며, 경쟁에서 이기는 것을 즐깁니다.' },
+            { name: '양자리 III (혁신가)', startMonth: 4, startDay: 10, endMonth: 4, endDay: 19, description: '독창적인 아이디어와 뜨거운 열정을 가진 혁신가입니다. 기존의 틀을 깨고 새로운 길을 만드는 것을 즐기며, 자유로운 영혼의 소유자입니다.' },
+            { name: '황소자리 I (건축가)', startMonth: 4, startDay: 20, endMonth: 4, endDay: 29, description: '안정성과 현실적인 감각을 바탕으로 삶을 설계하는 건축가입니다. 인내심이 강하고 신뢰할 수 있으며, 아름답고 편안한 환경을 중요하게 생각합니다.' },
+            { name: '황소자리 II (예술가)', startMonth: 4, startDay: 30, endMonth: 5, endDay: 9, description: '미적 감각이 뛰어나고 오감이 발달한 예술가 타입입니다. 삶의 즐거움을 추구하며, 사랑하는 사람들에게 헌신적인 모습을 보입니다.' },
+            { name: '황소자리 III (안정가)', startMonth: 5, startDay: 10, endMonth: 5, endDay: 20, description: '책임감이 강하고 현실적인 문제 해결 능력이 뛰어난 안정가입니다. 한번 정한 목표는 꾸준히 밀고 나가며, 주변 사람들에게 든든한 버팀목이 되어줍니다.' },
+            { name: '쌍둥이자리 I (전령)', startMonth: 5, startDay: 21, endMonth: 5, endDay: 31, description: '호기심이 왕성하고 재치 있는 말솜씨를 가진 전령입니다. 새로운 지식을 습득하고 전파하는 것을 즐기며, 다재다능한 매력을 가지고 있습니다.' },
+            { name: '쌍둥이자리 II (엔터테이너)', startMonth: 6, startDay: 1, endMonth: 6, endDay: 10, description: '사교적이고 유머 감각이 뛰어난 엔터테이너입니다. 사람들과 어울리는 것을 좋아하며, 어떤 자리에서든 분위기를 즐겁게 만드는 재주가 있습니다.' },
+            { name: '쌍둥이자리 III (사상가)', startMonth: 6, startDay: 11, endMonth: 6, endDay: 21, description: '논리적이고 분석적인 사고를 하는 사상가 타입입니다. 다양한 아이디어를 탐구하고 토론하는 것을 즐기며, 객관적인 시각을 유지하려 노력합니다.' },
+            { name: '게자리 I (양육자)', startMonth: 6, startDay: 22, endMonth: 7, endDay: 1, description: '따뜻한 마음과 풍부한 감수성을 지닌 양육자입니다. 가족과 친구들을 보살피는 것에서 큰 기쁨을 느끼며, 강한 보호 본능을 가지고 있습니다.' },
+            { name: '게자리 II (공감가)', startMonth: 7, startDay: 2, endMonth: 7, endDay: 12, description: '타인의 감정을 깊이 이해하고 공감하는 능력이 뛰어난 공감가입니다. 직관력이 뛰어나고 예술적인 재능을 가지고 있으며, 상상력이 풍부합니다.' },
+            { name: '게자리 III (보호자)', startMonth: 7, startDay: 13, endMonth: 7, endDay: 22, description: '자신이 사랑하는 것들을 지키기 위해 강한 의지를 보여주는 보호자입니다. 겉으로는 부드러워 보이지만, 내면에는 강인함과 끈기를 가지고 있습니다.' },
+            { name: '사자자리 I (스타)', startMonth: 7, startDay: 23, endMonth: 8, endDay: 1, description: '자신감 넘치고 주목받기를 즐기는 타고난 스타입니다. 밝고 긍정적인 에너지로 주변을 환하게 만들며, 아낌없이 베푸는 따뜻한 마음을 가졌습니다.' },
+            { name: '사자자리 II (통치자)', startMonth: 8, startDay: 2, endMonth: 8, endDay: 12, description: '강한 책임감과 리더십을 가진 통치자 타입입니다. 명예와 자존심을 중요하게 생각하며, 자신이 속한 그룹을 이끌고 발전시키려는 의지가 강합니다.' },
+            { name: '사자자리 III (공연가)', startMonth: 8, startDay: 13, endMonth: 8, endDay: 22, description: '창의적이고 드라마틱한 표현력을 가진 공연가입니다. 삶을 하나의 무대라고 생각하며, 자신의 재능과 열정을 마음껏 펼치고 싶어합니다.' },
+            { name: '처녀자리 I (분석가)', startMonth: 8, startDay: 23, endMonth: 9, endDay: 1, description: '꼼꼼하고 비판적인 시각으로 세상을 분석하는 분석가입니다. 완벽을 추구하며, 실용적이고 효율적인 방법을 찾는 데 뛰어난 재능이 있습니다.' },
+            { name: '처녀자리 II (완벽주의자)', startMonth: 9, startDay: 2, endMonth: 9, endDay: 12, description: '높은 기준과 섬세함을 가진 완벽주의자입니다. 맡은 일은 책임감을 가지고 완벽하게 처리하며, 봉사와 헌신에서 보람을 느낍니다.' },
+            { name: '처녀자리 III (치유사)', startMonth: 9, startDay: 13, endMonth: 9, endDay: 22, description: '다른 사람의 문제를 해결해주고 돕는 것에서 기쁨을 느끼는 치유사입니다. 현실적인 조언과 따뜻한 마음으로 주변 사람들에게 힘이 되어줍니다.' },
+            { name: '천칭자리 I (외교관)', startMonth: 9, startDay: 23, endMonth: 10, endDay: 2, description: '균형과 조화를 추구하는 뛰어난 외교관입니다. 공정하고 객관적인 판단력을 가지고 있으며, 갈등을 중재하고 평화를 만드는 데 능숙합니다.' },
+            { name: '천칭자리 II (이상주의자)', startMonth: 10, startDay: 3, endMonth: 10, endDay: 13, description: '아름다움과 정의로운 세상을 꿈꾸는 이상주의자입니다. 예술적인 감각과 사교성을 겸비했으며, 파트너와의 관계를 매우 중요하게 생각합니다.' },
+            { name: '천칭자리 III (사교가)', startMonth: 10, startDay: 14, endMonth: 10, endDay: 23, description: '매력적이고 세련된 매너를 가진 사교가입니다. 사람들과 어울리는 것을 즐기며, 폭넓은 인간관계를 통해 삶의 활력을 얻습니다.' },
+            { name: '전갈자리 I (탐정)', startMonth: 10, startDay: 24, endMonth: 11, endDay: 2, description: '사물의 본질을 꿰뚫어 보는 통찰력을 가진 탐정입니다. 강한 집중력과 의지력으로 원하는 것을 반드시 손에 넣으며, 비밀스러운 매력을 가지고 있습니다.' },
+            { name: '전갈자리 II (연금술사)', startMonth: 11, startDay: 3, endMonth: 11, endDay: 12, description: '위기를 기회로 바꾸는 강력한 변혁의 힘을 가진 연금술사입니다. 깊은 감정과 카리스마를 가지고 있으며, 한번 맺은 인연을 소중히 여깁니다.' },
+            { name: '전갈자리 III (불사조)', startMonth: 11, startDay: 13, endMonth: 11, endDay: 22, description: '어떤 어려움에도 굴하지 않고 다시 일어서는 불사조와 같은 존재입니다. 강인한 정신력과 생존력을 가지고 있으며, 큰 변화를 통해 성장합니다.' },
+            { name: '사수자리 I (모험가)', startMonth: 11, startDay: 23, endMonth: 12, endDay: 2, description: '자유로운 영혼을 가진 낙천적인 모험가입니다. 새로운 경험과 도전을 즐기며, 더 넓은 세상을 향해 끊임없이 나아갑니다.' },
+            { name: '사수자리 II (철학자)', startMonth: 12, startDay: 3, endMonth: 12, endDay: 12, description: '삶의 의미와 진리를 탐구하는 철학자 타입입니다. 지적인 호기심이 강하고, 자신의 신념을 다른 사람들과 나누는 것을 좋아합니다.' },
+            { name: '사수자리 III (비전가)', startMonth: 12, startDay: 13, endMonth: 12, endDay: 21, description: '먼 미래를 내다보는 통찰력과 이상을 가진 비전가입니다. 긍정적인 에너지와 영감으로 주변 사람들에게 희망을 줍니다.' },
+            { name: '염소자리 I (성취가)', startMonth: 12, startDay: 22, endMonth: 12, endDay: 31, description: '야망과 책임감을 가지고 목표를 향해 꾸준히 나아가는 성취가입니다. 현실적인 감각과 인내심으로 사회적인 성공을 이루어냅니다.' },
+            { name: '염소자리 II (전략가)', startMonth: 1, startDay: 1, endMonth: 1, endDay: 10, description: '치밀한 계획과 조직적인 능력으로 목표를 달성하는 전략가입니다. 신중하고 믿음직스러우며, 전통과 규칙을 존중합니다.' },
+            { name: '염소자리 III (현자)', startMonth: 1, startDay: 11, endMonth: 1, endDay: 19, description: '풍부한 경험과 지혜를 가진 현자 타입입니다. 실용적인 지혜로 다른 사람들에게 조언을 해주며, 시간이 지날수록 더 큰 영향력을 발휘합니다.' },
+            { name: '물병자리 I (미래학자)', startMonth: 1, startDay: 20, endMonth: 1, endDay: 29, description: '독창적이고 진보적인 사고를 하는 미래학자입니다. 개성과 자유를 존중하며, 더 나은 미래를 만들기 위해 노력합니다.' },
+            { name: '물병자리 II (인도주의자)', startMonth: 1, startDay: 30, endMonth: 2, endDay: 8, description: '인류애와 평등 사상을 가진 인도주의자입니다. 친구처럼 편안한 매력을 가지고 있으며, 사회적인 문제에 관심이 많습니다.' },
+            { name: '물병자리 III (반항아)', startMonth: 2, startDay: 9, endMonth: 2, endDay: 18, description: '기존의 틀에 얽매이지 않는 자유로운 반항아입니다. 예측할 수 없는 독특한 매력을 가지고 있으며, 세상을 바꾸려는 강한 의지를 품고 있습니다.' },
+            { name: '물고기자리 I (몽상가)', startMonth: 2, startDay: 19, endMonth: 2, endDay: 29, description: '상상력이 풍부하고 감수성이 예민한 몽상가입니다. 예술적인 재능이 뛰어나고, 다른 사람의 아픔에 깊이 공감하는 따뜻한 마음을 가졌습니다.' },
+            { name: '물고기자리 II (신비가)', startMonth: 3, startDay: 1, endMonth: 3, endDay: 10, description: '직관과 영감이 발달한 신비가 타입입니다. 현실 너머의 세계에 대한 깊은 이해를 가지고 있으며, 조용히 다른 사람들을 돕습니다.' },
+            { name: '물고기자리 III (시인)', startMonth: 3, startDay: 11, endMonth: 3, endDay: 20, description: '낭만적이고 희생적인 사랑을 실천하는 시인입니다. 부드럽고 온화한 성품으로 주변 사람들을 편안하게 만들며, 사랑을 통해 자신을 완성합니다.' },
+        ];
+
+        const findZodiacButton = document.getElementById('findZodiac');
+        const monthInput = document.getElementById('month');
+        const dayInput = document.getElementById('day');
+        const resultDiv = document.getElementById('result');
+        const errorDiv = document.getElementById('error');
+        const errorMessageSpan = document.getElementById('errorMessage');
+
+        findZodiacButton.addEventListener('click', () => {
+            const month = parseInt(monthInput.value);
+            const day = parseInt(dayInput.value);
+            
+            // 입력값 유효성 검사
+            if (isNaN(month) || isNaN(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+                showError('유효한 월과 일을 입력해주세요.');
+                return;
+            }
+            
+            // 날짜 유효성 추가 검사 (예: 2월 30일)
+            const daysInMonth = new Date(2024, month, 0).getDate(); // 임의의 윤년으로 검사
+            if (day > daysInMonth) {
+                showError(`${month}월은 ${daysInMonth}일까지 있습니다.`);
+                return;
+            }
+
+            hideError();
+            
+            let foundZodiac = null;
+            
+            // 별자리 찾기 로직
+            for (const zodiac of zodiacs) {
+                // 한 별자리가 두 달에 걸쳐 있는 경우
+                if (zodiac.startMonth !== zodiac.endMonth) {
+                    if ((month === zodiac.startMonth && day >= zodiac.startDay) || (month === zodiac.endMonth && day <= zodiac.endDay)) {
+                        foundZodiac = zodiac;
+                        break;
+                    }
+                } else { // 한 달 안에 있는 경우
+                    if (month === zodiac.startMonth && day >= zodiac.startDay && day <= zodiac.endDay) {
+                        foundZodiac = zodiac;
+                        break;
+                    }
+                }
+            }
+
+            // 염소자리는 12월과 1월에 걸쳐있으므로 특별 처리
+            if (!foundZodiac) {
+                 if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) {
+                    if (month === 12) {
+                        foundZodiac = zodiacs.find(z => z.name.includes('염소자리 I'));
+                    } else {
+                        if (day <= 10) {
+                            foundZodiac = zodiacs.find(z => z.name.includes('염소자리 II'));
+                        } else {
+                            foundZodiac = zodiacs.find(z => z.name.includes('염소자리 III'));
+                        }
+                    }
+                 }
+            }
+
+
+            if (foundZodiac) {
+                displayResult(foundZodiac);
+            } else {
+                showError('해당 날짜의 별자리를 찾을 수 없습니다.');
+            }
+        });
+
+        function displayResult(zodiac) {
+            document.getElementById('zodiacName').textContent = zodiac.name;
+            let dateRange = `${zodiac.startMonth}월 ${zodiac.startDay}일 ~ `;
+            if (zodiac.endMonth) {
+                 dateRange += `${zodiac.endMonth}월 ${zodiac.endDay}일`;
+            } else { // 12월에서 1월로 넘어가는 염소자리 처리
+                const nextZodiac = zodiacs.find(z => z.startMonth === 1 && z.name.includes('염소자리'));
+                dateRange += `${nextZodiac.endMonth}월 ${nextZodiac.endDay}일`;
+            }
+            document.getElementById('zodiacDate').textContent = dateRange;
+            document.getElementById('zodiacDescription').textContent = zodiac.description;
+            resultDiv.classList.remove('hidden');
+        }
+        
+        function showError(message) {
+            errorMessageSpan.textContent = message;
+            errorDiv.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+        }
+        
+        function hideError() {
+            errorDiv.classList.add('hidden');
+        }
+
+    </script>
+</body>
+</html>
